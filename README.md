@@ -42,7 +42,35 @@ El diseño divide la ALU en dos mitades:
 
 ## Preguntas de Pensamiento Crítico
 
-### 1. Modularidad
+### 1. Modularidad: 
+Ventajas y desventajas de usar dos ALU16 vs. una ALU32 monolítica. 
+
+Las principales ventajas de usar dos ALUS de 16 es que mayormente ya hemos trabajado con conexiones y compuertas de 16 bits, lo que facilita la reutilización de componentes, reduciendo la complejidad inicial. Un diseño modular (En vez de un bloque grande de 32 bits, dos bloques de 16 conectados) facilita a futuro una implementacion de un sistema de hardware mayor como lo seria una ALU64, donde a simple vista seria seguir añadiendole ALUs16 en cadena, ahorrando tiempo en desarrollo. Otro punto importante y ventaja es la facilidad del trabajo en paralelo, mientras una persona puede diseñar la parte baja, otro puede diseñar la parte alta, y como tendran la misma logica interna, esto reduce el riesgo de comportamientos distintos entre partes
+
+
+Las principales desventajas de este sistema modular es que al tener dos ALUS16 una con la parte alta [16..31] y otra con la baja [0..15], al tener el numero "dividido", el carry que genera la parte baja tiene que viajar a la adicion de la parte alta antes de terminar el calculo, por lo que hay un tiempo de ejecución mayor. 
+
+Esto pasa porque cuando sumas dos números de 32 bits en binario, realmente estás sumando dos mitades:
+
+Parte baja → bits 0 a 15.
+
+Parte alta → bits 16 a 31.
+
+El problema es que una suma de 16 bits puede “desbordarse” (overflow local) y generar un bit extra que no cabe en esa parte baja: ese es el carry-out.
+
+Ese carry-out debe sumarse en la parte alta porque representa “un uno extra” que se debe añadir al bit 16.
+Si no lo propagas, cualquier suma que genere un acarreo desde el bit 15 dará un resultado incorrecto en la parte alta.
+
+Otra desventaja es que se necesita mas logica de interconexion, mas cableado y multiplexores para pasar las señales de control como el carry 
+
+Mayor consumo de compuertas: Duplicar la lógica de control en cada módulo puede usar más compuertas que un diseño optimizado de 32 bits desde cero.
+
+Coordinación de banderas: Bandera ZR (cero) y NG (negativo) deben calcularse considerando ambas mitades, lo que implica más lógica de unión.
+
+Posible desincronización de señales: Si no se maneja bien el timing, la parte alta podría leer un carry o señal de control erróneo en simulaciones o hardware real.
+
+En resumen: 
+
 *Ventajas*: Reutiliza componentes probados (ALU16), facilita depuración y mantenimiento, reduce complejidad inicial.  
 *Desventajas*: Mayor latencia por propagación de carry, más lógica de interconexión.  
 *Justificación*: La modularidad permite escalar y mantener más fácilmente, aunque implica un pequeño coste en velocidad.
