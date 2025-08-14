@@ -47,7 +47,8 @@ La ALU se divide en dos mitades:
 ---
 
 ## 🖼 **Diagrama**
-![Diagrama ALU32](ALU32_anotada.png)
+![WhatsApp Image 2025-08-14 at 9 37 25 AM](https://github.com/user-attachments/assets/3af884a8-bb36-458f-96a2-196d1cd16078)
+
 
 ---
 
