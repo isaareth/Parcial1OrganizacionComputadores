@@ -1,0 +1,25 @@
+// ALU32.hdl
+// ALU de 32 bits usando dos ALU16 extendidas, con banderas zr, ng y overflow
+
+CHIP ALU32 {
+    IN  x[32], y[32], zx, nx, zy, ny, f, no;
+    OUT out[32], zr, ng, overflow;
+
+    PARTS:
+    // Parte baja (bits 0-15)
+    ALU16(x=x[0..15], y=y[0..15], zx=zx, nx=nx, zy=zy, ny=ny, f=f, no=no, cin=false,
+        out=out[0..15], zr=zrLow, ng=ngLow, cout=carryLow, ovfl=ovflLow);
+
+    // Parte alta (bits 16-31), recibe carry de la baja
+    ALU16(x=x[16..31], y=y[16..31], zx=zx, nx=nx, zy=zy, ny=ny, f=f, no=no, cin=carryLow,
+        out=out[16..31], zr=zrHigh, ng=ngHigh, cout=carryHigh, ovfl=ovflHigh);
+
+    // Bandera ZERO global: solo es 1 si ambas mitades son cero
+    And(a=zrLow, b=zrHigh, out=zr);
+
+    // Bandera NEGATIVO: es 1 si el bit 31 de la salida es 1
+    Or(a=ngLow, b=ngHigh, out=ng); // O simplemente: ng=ngHigh
+
+    // Bandera OVERFLOW: xor entre carry-in y carry-out del bit 31
+    Or(a=ovflLow, b=ovflHigh, out=overflow); // O simplemente: overflow=ovflHigh
+}
