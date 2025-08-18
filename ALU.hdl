@@ -41,10 +41,7 @@ CHIP ALU {
         ng;      // if (out < 0)  equals 1, else 0
 
     PARTS:
-
-    
-   
-
+    // x = 0 
     Mux16(a=x, b=false, sel=zx, out=newX1);
 
     // !x
@@ -53,7 +50,6 @@ CHIP ALU {
 
     // y = 0
     Mux16(a=y, b=false, sel=zy, out=newY1);
-
     
     // !y
     Not16(in=newY1, out=notY1);
@@ -74,7 +70,4 @@ CHIP ALU {
 
     Or(a=lowOr, b=hiOr, out=nZr);
     Not(in=nZr, out=zr);
-
-
-
 }

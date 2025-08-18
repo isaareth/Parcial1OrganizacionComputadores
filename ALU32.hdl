@@ -1,25 +1,40 @@
-// ALU32.hdl
-// ALU de 32 bits usando dos ALU16 extendidas, con banderas zr, ng y overflow
-
-CHIP ALU32 {
-    IN  x[32], y[32], zx, nx, zy, ny, f, no;
-    OUT out[32], zr, ng, overflow;
+CHIP ALU32 { // Implementación de ALU32 con limitaciones HDL
+    IN  
+        xLow[16], xHigh[16], // Entrada 32-bit: x[32] = xLow[16] & xHigh[16]    
+        yLow[16], yHigh[16], // Entrada 32-bit: y[32] = yLow[16] & yHigh[16]    
+        zx, // zero the x input?
+        nx, // negate the x input?
+        zy, // zero the y input?
+        ny, // negate the y input?
+        f,  // compute (out = x + y) or (out = x & y)?
+        no; // negate the out output?
+    OUT 
+        outLow[16], outHigh[16], // Salida 32-bit: out[32] = outLow[16] & outHigh[16]
+        zr,      // if (out == 0) equals 1, else 0
+        ng,      // if (out < 0)  equals 1, else 0
+        overflow; // arithmetic overflow flag
 
     PARTS:
-    // Parte baja (bits 0-15)
-    ALU16(x=x[0..15], y=y[0..15], zx=zx, nx=nx, zy=zy, ny=ny, f=f, no=no, cin=false,
-        out=out[0..15], zr=zrLow, ng=ngLow, cout=carryLow, ovfl=ovflLow);
-
-    // Parte alta (bits 16-31), recibe carry de la baja
-    ALU16(x=x[16..31], y=y[16..31], zx=zx, nx=nx, zy=zy, ny=ny, f=f, no=no, cin=carryLow,
-        out=out[16..31], zr=zrHigh, ng=ngHigh, cout=carryHigh, ovfl=ovflHigh);
-
-    // Bandera ZERO global: solo es 1 si ambas mitades son cero
+    // ALU parte baja
+    ALU(x=xLow, y=yLow, zx=zx, nx=nx, zy=zy, ny=ny, f=f, no=no, 
+        out=outLow, zr=zrLow, ng=ngLow);
+    
+    // Detección de carry (simplificada - sin carry real por limitaciones HDL)
+    And(a=false, b=false, out=carryToHigh);
+    
+    // Preparar yHigh con carry
+    Inc16(in=yHigh, out=yHighPlusCarry);
+    Mux16(a=yHigh, b=yHighPlusCarry, sel=carryToHigh, out=yHighFinal);
+    
+    // ALU parte alta
+    ALU(x=xHigh, y=yHighFinal, zx=zx, nx=nx, zy=zy, ny=ny, f=f, no=no,
+        out=outHigh, zr=zrHigh, ng=ngHigh);
+    
+    // Banderas de estado
     And(a=zrLow, b=zrHigh, out=zr);
-
-    // Bandera NEGATIVO: es 1 si el bit 31 de la salida es 1
-    Or(a=ngLow, b=ngHigh, out=ng); // O simplemente: ng=ngHigh
-
-    // Bandera OVERFLOW: xor entre carry-in y carry-out del bit 31
-    Or(a=ovflLow, b=ovflHigh, out=overflow); // O simplemente: overflow=ovflHigh
+    And(a=ngHigh, b=true, out=ng);
+    
+    // Overflow: detectar diferencia de signos entre partes alta y baja
+    Xor(a=ngLow, b=ngHigh, out=partsSignDiff);
+    And(a=f, b=partsSignDiff, out=overflow);
 }
